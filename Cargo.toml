@@ -8,3 +8,5 @@ edition = "2018"
 
 [dependencies]
 pyo3 = { version = "0.13.2", features = ["extension-module"] }
+nalgebra = "*"
+float-ord = "0.2.0"
