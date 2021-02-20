@@ -15,6 +15,7 @@ pub mod qtmcore_inner {
         max(min(num, max_value), min_value)
     }
 
+    // FIXME: ? -> safe clamp of f64
     fn clamp_f64(num: f64, min_value: f64, max_value: f64) -> f64 {
         use float_ord::FloatOrd;
 
@@ -84,6 +85,7 @@ pub mod qtmcore_inner {
                             matrix[(i, j)] = self.la;
                         }
                     } else if i == (Wrapping(j) - Wrapping(1)).0 {
+                        // FIXME: incorrect when i == usize::max
                         mu_index = clamp_xsize::<usize>(mu_index + 1, 0, self.channel_count);
                         matrix[(i, j)] = mu_index as f64 * self.mu;
                     } else {
@@ -93,13 +95,16 @@ pub mod qtmcore_inner {
             }
 
             // formation of nu
-            let mut nu_index = self.queue_size as isize;
+            let mut nu_index = self.queue_size as isize; // FIXME: incorrect when self.queue_size > usize::max / 2
             for i in 0..total_count {
                 for j in 1..total_count + 1 {
                     if i == j - 1 {
                         matrix[(i, j)] += nu_index as f64 * self.nu;
-                        nu_index =
-                            clamp_xsize::<isize>(nu_index - 1, 0, self.queue_size as isize - 1);
+                        nu_index = clamp_xsize::<isize>(
+                            nu_index - 1,
+                            0,
+                            self.queue_size as isize /* FIXME: incorrect when self.queue_size > usize::max / 2 */ - 1,
+                        );
                     }
                 }
             }
@@ -147,6 +152,7 @@ pub mod qtmcore_inner {
             };
 
             let fs = a * b;
+            // FIXME: iterate until end-1
             for item in fs.iter() {
                 self.final_states.push(*item);
             }
@@ -156,6 +162,8 @@ pub mod qtmcore_inner {
         }
     }
 }
+
+// TODO: qtmcore_inner pub's wrapper for pyo3 
 
 #[cfg(test)]
 mod tests {
