@@ -8,6 +8,8 @@ pub mod qtmcore_inner {
     extern crate nalgebra as na;
     use na::{DMatrix, DVector};
 
+    use pyo3::prelude::*;
+
     fn clamp_xsize<T>(num: T, min_value: T, max_value: T) -> T
     where
         T: Ord,
@@ -36,36 +38,77 @@ pub mod qtmcore_inner {
         ret
     }
 
+    #[pyclass]
     pub struct Core {
-        channel_count: usize,
-        queue_size: usize,
-        la: f64,
-        mu: f64,
-        nu: f64,
-        n: isize,
+        #[pyo3(get, set)] channel_count: usize,
+        #[pyo3(get, set)] queue_size: usize,
+        #[pyo3(get, set)] la: f64,
+        #[pyo3(get, set)] mu: f64,
+        #[pyo3(get, set)] nu: f64,
+        #[pyo3(get, set)] n: isize,
         final_states: Vec<f64>,
     }
 
+    #[pymethods]
     impl Core {
+        #[new]
         pub fn new(
-            channel_count: usize,
-            queue_size: usize,
-            la: f64,
-            mu: f64,
-            nu: f64,
+            channel_count: usize, queue_size: usize,
+            la: f64, mu: f64, nu: f64,
             n: isize,
         ) -> Self {
             Core {
-                channel_count,
-                queue_size,
-                la,
-                mu,
-                nu,
+                channel_count, queue_size,
+                la, mu, nu,
                 n,
                 final_states: vec![],
             }
         }
 
+        pub fn final_states(&self) -> Vec<f64> {
+            self.final_states.clone() // FIXME: need to return ref
+        }
+
+        pub fn calc_final_states(&mut self) -> Vec<f64> {
+            let mut a = self.matrix_init();
+            let total_count = self.channel_count + self.queue_size + 1;
+            let m_size = total_count + 1;
+
+            a = a.resize(m_size, m_size, 0.);
+
+            for i in 0..m_size - 1 {
+                a[(i, m_size - 1)] = 1. / total_count as f64;
+                a[(m_size - 1, i)] = 1.;
+            }
+            a[(m_size - 1, m_size - 1)] = 0.;
+
+            let mut b = vec![];
+            for _ in 0..total_count {
+                b.push(0.);
+            }
+            b.push(1.);
+
+            let b = DVector::from_vec(b);
+
+            if !a.try_inverse_mut() {
+                panic!("invert error");
+            };
+
+            let fs = a * b;
+
+            self.final_states.clear();
+            // FIXME: iterate until end-1
+            for item in fs.iter() {
+                self.final_states.push(*item);
+            }
+            self.final_states.pop();
+
+            self.final_states()
+        }
+    }
+
+    // private implementation's
+    impl Core {
         fn matrix_init(&mut self) -> DMatrix<f64> {
             let total_count = self.channel_count + self.queue_size;
             let mut matrix: DMatrix<f64> = DMatrix::from_vec(1, 1, vec![0.]);
@@ -121,49 +164,8 @@ pub mod qtmcore_inner {
 
             matrix
         }
-
-        pub fn final_states(&self) -> &Vec<f64> {
-            &self.final_states
-        }
-
-        pub fn calc_final_states(&mut self) -> &Vec<f64> {
-            let mut a = self.matrix_init();
-            let total_count = self.channel_count + self.queue_size + 1;
-            let m_size = total_count + 1;
-
-            a = a.resize(m_size, m_size, 0.);
-
-            for i in 0..m_size - 1 {
-                a[(i, m_size - 1)] = 1. / total_count as f64;
-                a[(m_size - 1, i)] = 1.;
-            }
-            a[(m_size - 1, m_size - 1)] = 0.;
-
-            let mut b = vec![];
-            for _ in 0..total_count {
-                b.push(0.);
-            }
-            b.push(1.);
-
-            let b = DVector::from_vec(b);
-
-            if !a.try_inverse_mut() {
-                panic!("invert error");
-            };
-
-            let fs = a * b;
-            // FIXME: iterate until end-1
-            for item in fs.iter() {
-                self.final_states.push(*item);
-            }
-            self.final_states.pop();
-
-            self.final_states()
-        }
     }
 }
-
-// TODO: qtmcore_inner pub's wrapper for pyo3 
 
 #[cfg(test)]
 mod tests {
