@@ -1,6 +1,6 @@
 use std::num::Wrapping;
 
-use crate::utility::{clamp_xsize, clamp_f64};
+use crate::utility::{clamp_f64, clamp_xsize};
 
 use nalgebra::{DMatrix, DVector};
 use pyo3::prelude::*;
@@ -45,7 +45,7 @@ impl Qtm {
     }
 
     pub fn final_states(&self) -> Vec<f64> {
-        self.final_states.clone() // FIXME: need to return ref
+        self.final_states.clone() // need to return ref ?
     }
 
     pub fn calc_final_states(&mut self) -> Vec<f64> {
@@ -76,7 +76,6 @@ impl Qtm {
         let fs = a * b;
 
         self.final_states.clear();
-        // FIXME: iterate until end-1
         for item in fs.iter() {
             self.final_states.push(*item);
         }
@@ -106,8 +105,9 @@ impl Qtm {
                     } else {
                         matrix[(i, j)] = self.la;
                     }
-                } else if i == (Wrapping(j) - Wrapping(1)).0 {
-                    // FIXME: incorrect when i == usize::max
+                } else if i == (Wrapping(j) - Wrapping(1)).0
+                /* Warning: incorrect when i == usize::max */
+                {
                     mu_index = clamp_xsize::<usize>(mu_index + 1, 0, self.channel_count);
                     matrix[(i, j)] = mu_index as f64 * self.mu;
                 } else {
@@ -117,16 +117,13 @@ impl Qtm {
         }
 
         // formation of nu
-        let mut nu_index = self.queue_size as isize; // FIXME: incorrect when self.queue_size > usize::max / 2
+        // Warning: incorrect when self.queue_size > usize::max / 2
+        let mut nu_index = self.queue_size as isize;
         for i in 0..total_count {
             for j in 1..total_count + 1 {
                 if i == j - 1 {
                     matrix[(i, j)] += nu_index as f64 * self.nu;
-                    nu_index = clamp_xsize::<isize>(
-                        nu_index - 1,
-                        0,
-                        self.queue_size as isize /* FIXME: incorrect when self.queue_size > usize::max / 2 */ - 1,
-                    );
+                    nu_index = clamp_xsize::<isize>(nu_index - 1, 0, self.queue_size as isize - 1);
                 }
             }
         }

@@ -6,7 +6,7 @@ where
 {
     max(min(num, max_value), min_value)
 }
-// FIXME: ? -> safe clamp of f64
+
 pub fn clamp_f64(num: f64, min_value: f64, max_value: f64) -> f64 {
     use float_ord::FloatOrd;
     let lhs: f64;
