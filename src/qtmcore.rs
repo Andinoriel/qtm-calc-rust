@@ -1,12 +1,11 @@
 #[allow(dead_code)]
-pub mod qtmcore_inner {
+pub mod qtmcore {
     use std::{
         cmp::{max, min},
         num::Wrapping,
     };
 
-    extern crate nalgebra as na;
-    use na::{DMatrix, DVector};
+    use nalgebra::{DMatrix, DVector};
 
     use pyo3::prelude::*;
 
@@ -39,7 +38,7 @@ pub mod qtmcore_inner {
     }
 
     #[pyclass]
-    pub struct Core {
+    pub struct Qtm {
         #[pyo3(get, set)] channel_count: usize,
         #[pyo3(get, set)] queue_size: usize,
         #[pyo3(get, set)] la: f64,
@@ -50,14 +49,14 @@ pub mod qtmcore_inner {
     }
 
     #[pymethods]
-    impl Core {
+    impl Qtm {
         #[new]
         pub fn new(
             channel_count: usize, queue_size: usize,
             la: f64, mu: f64, nu: f64,
             n: isize,
         ) -> Self {
-            Core {
+            Qtm {
                 channel_count, queue_size,
                 la, mu, nu,
                 n,
@@ -108,7 +107,7 @@ pub mod qtmcore_inner {
     }
 
     // private implementation's
-    impl Core {
+    impl Qtm {
         fn matrix_init(&mut self) -> DMatrix<f64> {
             let total_count = self.channel_count + self.queue_size;
             let mut matrix: DMatrix<f64> = DMatrix::from_vec(1, 1, vec![0.]);
@@ -171,7 +170,7 @@ pub mod qtmcore_inner {
 mod tests {
     #[test]
     fn core_check_fs() {
-        use super::qtmcore_inner::Core;
+        use super::qtmcore::Qtm;
 
         let comp = vec![
             0.14285714285714285,
@@ -180,7 +179,7 @@ mod tests {
             0.2857142857142857,
         ];
 
-        let mut x = Core::new(2, 1, 10., 5., 0., -1);
+        let mut x = Qtm::new(2, 1, 10., 5., 0., -1);
         x.calc_final_states();
         let ret = x.final_states();
 
