@@ -2,10 +2,10 @@ use pyo3::prelude::*;
 
 mod qtmcore;
 mod qtmdata;
+mod utility;
 
-use qtmcore::qtmcore::Qtm;
-use qtmdata::qtmdata::QtmData;
-
+use qtmcore::Qtm;
+use qtmdata::QtmData;
 
 #[pymodule]
 #[allow(unused_variables)]
