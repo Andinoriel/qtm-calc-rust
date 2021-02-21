@@ -1,6 +1,6 @@
 # qtm-calc-rust
 
-This is Rust reimplementation of [qtm-calc](https://github.com/Andinoriel/qtm-calc) tool and provided as a dynamic library for embedding into Python language (using pyo3).
+This is Rust-written reimplementation of [qtm-calc](https://github.com/Andinoriel/qtm-calc) tool which provides as a dynamic library for embedding into Python language (using pyo3).
 
 ## Build
 
@@ -13,13 +13,13 @@ This is Rust reimplementation of [qtm-calc](https://github.com/Andinoriel/qtm-ca
 
 * On macOS, you need to set additional linker arguments. One option is to compile with:
 ```
-cargo rustc --release -- -C link-arg=-undefined -C link-arg=dynamic_lookup
+    cargo rustc --release -- -C link-arg=-undefined -C link-arg=dynamic_lookup
 ```
 
 3. Aftet build you must rename the shared library from the target folder: 
-* on MacOS, rename libqtmcalc.dylib to libqtmcalc.sо;
+* on MacOS, rename liblibqtmcalc.dylib to libqtmcalc.sо;
 * on Windows libqtmcalc.dll to libqtmcalc.pyd;
-* on Linux leave it unchanged.
+* on Linux rename liblibqtmcalc.so to libqtmcalc.sо.
 
 ## Usage
 
